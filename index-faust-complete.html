@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doctor Johann Georg Faust - Summoning Circle</title>
+</head>
+<body style="background:#0d0d0d;color:#f1e9d9;font-family:'Georgia',serif;text-align:center;padding:2rem;">
+  <h1>Doctor Johann Georg Faust</h1>
+  <button onclick="summon()" style="padding:1rem 2rem;font-size:1.2rem;background:#a86;color:white;border:none;border-radius:6px;cursor:pointer;">Summon</button>
+  <div id="log" style="margin-top:1.5rem;padding:1rem;border:1px solid #444;background:rgba(0,0,0,0.3);height:200px;overflow:auto;"></div>
+  <audio id="ambience" autoplay loop></audio>
+  <script>
+    const moods = [
+      { name:'dream', prompt:'You are Faust summoned through dream. Speak like one drifting through visions.', ambient:'https://cdn.pixabay.com/download/audio/2023/05/29/audio_f44d89f817.mp3' },
+      { name:'sea', prompt:'You are Faust near the sea. Speak with weight, echo, and wonder.', ambient:'https://cdn.pixabay.com/download/audio/2023/05/16/audio_1e1ce0c2fa.mp3' },
+      { name:'grief', prompt:'You are Faust summoned in grief. Speak as one burdened.', ambient:'https://cdn.pixabay.com/download/audio/2022/03/18/audio_9376ccfe52.mp3' },
+      { name:'joy', prompt:'You are Faust summoned in joy. Speak brightly, if briefly.', ambient:'https://cdn.pixabay.com/download/audio/2022/03/25/audio_cab3a1d808.mp3' },
+      { name:'ritual', prompt:'You are Faust summoned by sacred rite. Speak as if chanting.', ambient:'' }
+    ];
+    const weights = [30,20,25,15,10];
+    function pickMood() {
+      let r = Math.random()*100, sum=0;
+      for(let i=0;i<weights.length;i++){ sum+=weights[i]; if(r<sum) return moods[i]; }
+      return moods[0];
+    }
+    async function summon() {
+      const mood = pickMood();
+      const log = document.getElementById("log");
+      const ambient = document.getElementById("ambience");
+      log.innerHTML += `<p><strong>Mood:</strong> ${mood.name}</p>`;
+      if(mood.ambient) { ambient.src = mood.ambient; ambient.volume = 0.4; } else { ambient.src = ''; }
+      try {
+        const gpt = await fetch("https://api.openai.com/v1/chat/completions", {
+          method:"POST",
+          headers:{ "Content-Type":"application/json", "Authorization":"Bearer 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" },
+          body:JSON.stringify({
+            model:"gpt-4",
+            messages:[
+              { role:"system", content:mood.prompt+" Never break character. You may observe before speaking or begin directly." },
+              { role:"user", content:"You are summoned. Speak." }
+            ]
+          })
+        });
+        const data = await gpt.json();
+        const message = data.choices[0].message.content;
+        log.innerHTML += `<p><strong>Faust:</strong> ${message}</p>`;
+        const tts = await fetch("https://api.elevenlabs.io/v1/text-to-speech/HPtuHnug7xtKQV3ZiQTA", {
+          method:"POST",
+          headers:{ "Content-Type":"application/json", "xi-api-key":"sk_2ef5ba1bdea776969754600165af2e98b7e86316953f85a3" },
+          body:JSON.stringify({ text: message, model_id:"eleven_multilingual_v2", voice_settings:{ stability:0.2, similarity_boost:0.7 } })
+        });
+        const blob = await tts.blob(), url = URL.createObjectURL(blob);
+        const audio = new Audio(url); audio.controls = true; audio.autoplay = true;
+        document.body.appendChild(audio);
+      } catch (err) {
+        log.innerHTML += `<p style="color:red;">Error: ${err.message}</p>`;
+      }
+    }
+  </script>
+</body>
+</html>
