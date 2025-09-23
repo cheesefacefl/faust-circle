@@ -1,66 +1,179 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Doctor Johann Georg Faust - GPT-3.5 Summoning</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mini Slot Machine</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+    body { display:flex; min-height:100svh; margin:0; background:#111; color:#eee; align-items:center; justify-content:center; }
+    .wrap { width:min(520px, 92vw); background:#1b1b1b; border:1px solid #2a2a2a; border-radius:14px; padding:20px; box-shadow:0 10px 40px rgba(0,0,0,.35); }
+    h1 { margin:0 0 10px; font-size:1.15rem; color:#b6f; letter-spacing:.3px; }
+    .reels { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin:14px 0 12px; }
+    .cell { background:#0d0d0d; border:1px solid #333; border-radius:10px; height:110px; display:grid; place-items:center; font-size:54px; transition:transform .2s ease; }
+    .cell.spin { animation:spin .8s ease-in-out; }
+    @keyframes spin {
+      0% { transform:translateY(0) rotate(0); }
+      35% { transform:translateY(-12px) rotate(6deg); }
+      70% { transform:translateY(4px) rotate(-4deg); }
+      100% { transform:translateY(0) rotate(0); }
+    }
+    .panel { display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
+    .panel .left { display:flex; gap:10px; align-items:center; }
+    .btn { appearance:none; border:0; background:#7c4dff; color:#fff; padding:10px 16px; border-radius:10px; font-weight:700; cursor:pointer; }
+    .btn:disabled { opacity:.5; cursor:not-allowed; }
+    .muted { color:#aaa; font-size:.9rem; }
+    .msg { min-height:1.2em; margin-top:8px; color:#9efc; }
+    .stats { display:flex; gap:16px; flex-wrap:wrap; font-size:.95rem; }
+    .stat { background:#121212; border:1px solid #2a2a2a; padding:8px 10px; border-radius:8px; }
+    details { margin-top:12px; }
+    table { width:100%; border-collapse:collapse; font-size:.95rem; }
+    td, th { border-bottom:1px solid #2a2a2a; padding:8px; text-align:left; }
+    .green { color:#6eea8d; }
+    .pink { color:#ff8ad6; }
+  </style>
 </head>
-<body style="background:#0d0d0d;color:#f1e9d9;font-family:'Georgia',serif;text-align:center;padding:2rem;">
-  <h1>Doctor Johann Georg Faust</h1>
-  <button onclick="summon()" style="padding:1rem 2rem;font-size:1.2rem;background:#a86;color:white;border:none;border-radius:6px;cursor:pointer;">Summon</button>
-  <div id="log" style="margin-top:1.5rem;padding:1rem;border:1px solid #444;background:rgba(0,0,0,0.3);height:200px;overflow:auto;"></div>
-  <audio id="ambience" autoplay loop></audio>
+<body>
+  <div class="wrap">
+    <h1>🍒 Mini Slot Machine</h1>
+
+    <div class="reels" id="reels">
+      <div class="cell" id="r0">🍒</div>
+      <div class="cell" id="r1">🍋</div>
+      <div class="cell" id="r2">🔔</div>
+    </div>
+
+    <div class="panel">
+      <div class="left">
+        <button class="btn" id="spinBtn">SPIN (−$1)</button>
+        <button class="btn" id="addBtn" title="Add $20 credits">+ $20</button>
+      </div>
+      <div class="stats">
+        <div class="stat">Credits: <strong id="credits">$100</strong></div>
+        <div class="stat">Bet: <strong id="bet">$1</strong></div>
+      </div>
+    </div>
+
+    <div class="msg" id="msg"></div>
+
+    <details>
+      <summary class="muted">Payout table</summary>
+      <table>
+        <thead><tr><th>Combo</th><th>Payout</th></tr></thead>
+        <tbody>
+          <tr><td>3× 💎</td><td class="green">×20</td></tr>
+          <tr><td>3× 🔔</td><td class="green">×10</td></tr>
+          <tr><td>3× 🍀</td><td class="green">×6</td></tr>
+          <tr><td>3× 🍒 / 🍋 / 🍇</td><td class="green">×4</td></tr>
+          <tr><td>Any 2 of a kind</td><td class="green">×2</td></tr>
+        </tbody>
+      </table>
+    </details>
+
+    <p class="muted">Tip: edit symbols/payouts in the code to theme it (Zelda, Diablo, plants, spiders—go wild).</p>
+  </div>
+
   <script>
-    const moods = [
-      { name:'dream', prompt:'You are Faust summoned through dream.', ambient:'https://cdn.pixabay.com/download/audio/2023/05/29/audio_f44d89f817.mp3' },
-      { name:'sea', prompt:'You are Faust summoned near the sea.', ambient:'https://cdn.pixabay.com/download/audio/2023/05/16/audio_1e1ce0c2fa.mp3' },
-      { name:'grief', prompt:'You are Faust summoned in grief.', ambient:'https://cdn.pixabay.com/download/audio/2022/03/18/audio_9376ccfe52.mp3' },
-      { name:'joy', prompt:'You are Faust summoned in joy.', ambient:'https://cdn.pixabay.com/download/audio/2022/03/25/audio_cab3a1d808.mp3' },
-      { name:'ritual', prompt:'You are Faust summoned by sacred rite.', ambient:'' }
+    // Symbols and rarity (weights)
+    const SYMBOLS = [
+      { ch: "🍒", w: 5 },
+      { ch: "🍋", w: 5 },
+      { ch: "🍇", w: 5 },
+      { ch: "🍀", w: 3 },
+      { ch: "🔔", w: 2 },
+      { ch: "💎", w: 1 },
     ];
-    const weights = [30,20,25,15,10];
-    function pickMood() {
-      let r = Math.random()*100, sum=0;
-      for(let i=0;i<weights.length;i++){ sum+=weights[i]; if(r<sum) return moods[i]; }
-      return moods[0];
+
+    // Payouts for triples; pairs pay 2x by default.
+    const PAY_TRIPLE = { "💎": 20, "🔔": 10, "🍀": 6, "🍒": 4, "🍋": 4, "🍇": 4 };
+    const START_CREDITS = 100;
+    const BET = 1;
+
+    const creditsEl = document.getElementById("credits");
+    const betEl = document.getElementById("bet");
+    const msgEl = document.getElementById("msg");
+    const spinBtn = document.getElementById("spinBtn");
+    const addBtn = document.getElementById("addBtn");
+    const reelEls = [0, 1, 2].map((i) => document.getElementById(`r${i}`));
+
+    let credits = START_CREDITS;
+    betEl.textContent = `$${BET}`;
+    updateCredits();
+
+    addBtn.addEventListener("click", () => {
+      credits += 20;
+      updateCredits();
+      msg("Added $20.");
+      spinBtn.disabled = false;
+    });
+
+    spinBtn.addEventListener("click", async () => {
+      if (credits < BET) return;
+      credits -= BET;
+      updateCredits();
+      spinBtn.disabled = true;
+      msg("Spinning…");
+
+      const result = spinOnce();
+      await animateReels(result);
+
+      const payout = evaluate(result);
+      if (payout > 0) {
+        const win = payout * BET;
+        credits += win;
+        updateCredits();
+        msg(`You won $${win} (${payout}×)!`, "win");
+      } else {
+        msg("No win. Try again!");
+      }
+      if (credits < BET) {
+        msg("You’re out of credits. Hit +$20 to keep playing.");
+      } else {
+        spinBtn.disabled = false;
+      }
+    });
+
+    function updateCredits() {
+      creditsEl.textContent = `$${credits}`;
     }
 
-    async function summon() {
-      const mood = pickMood();
-      const log = document.getElementById("log");
-      const ambient = document.getElementById("ambience");
-      log.innerHTML += `<p><strong>Mood:</strong> ${mood.name}</p>`;
-      if(mood.ambient) { ambient.src = mood.ambient; ambient.volume = 0.4; } else { ambient.src = ''; }
-
-      try {
-        const gpt = await fetch("https://api.openai.com/v1/chat/completions", {
-          method:"POST",
-          headers:{ "Content-Type":"application/json", "Authorization":"Bearer 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" },
-          body:JSON.stringify({
-            model:"gpt-3.5-turbo",
-            messages:[
-              { role:"system", content:mood.prompt+" Never break character. You may observe before speaking or begin directly." },
-              { role:"user", content:"You are summoned. Speak." }
-            ]
-          })
-        });
-
-        const data = await gpt.json();
-        const message = data.choices[0].message.content;
-        log.innerHTML += `<p><strong>Faust:</strong> ${message}</p>`;
-
-        const tts = await fetch("https://api.elevenlabs.io/v1/text-to-speech/HPtuHnug7xtKQV3ZiQTA", {
-          method:"POST",
-          headers:{ "Content-Type":"application/json", "xi-api-key":"sk_2ef5ba1bdea776969754600165af2e98b7e86316953f85a3" },
-          body:JSON.stringify({ text: message, model_id:"eleven_multilingual_v2", voice_settings:{ stability:0.2, similarity_boost:0.7 } })
-        });
-
-        const blob = await tts.blob(), url = URL.createObjectURL(blob);
-        const audio = new Audio(url); audio.controls = true; audio.autoplay = true;
-        document.body.appendChild(audio);
-      } catch (err) {
-        log.innerHTML += `<p style="color:red;">Error: ${err.message}</p>`;
+    function weightedPick() {
+      const total = SYMBOLS.reduce((sum, symbol) => sum + symbol.w, 0);
+      let r = Math.random() * total;
+      for (const symbol of SYMBOLS) {
+        r -= symbol.w;
+        if (r <= 0) return symbol.ch;
       }
+      return SYMBOLS[0].ch;
+    }
+
+    function spinOnce() {
+      return [weightedPick(), weightedPick(), weightedPick()];
+    }
+
+    function evaluate([a, b, c]) {
+      if (a === b && b === c) return PAY_TRIPLE[a] ?? 4; // default 4×
+      if (a === b || a === c || b === c) return 2; // any pair
+      return 0;
+    }
+
+    async function animateReels(result) {
+      // quick bounce
+      reelEls.forEach((el) => el.classList.add("spin"));
+      await sleep(250);
+      // staggered stop
+      for (let i = 0; i < 3; i++) {
+        reelEls[i].textContent = result[i];
+        await sleep(250);
+      }
+      reelEls.forEach((el) => el.classList.remove("spin"));
+    }
+
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    function msg(text, kind = "info") {
+      msgEl.textContent = text;
+      msgEl.className = kind === "win" ? "msg green" : "msg";
     }
   </script>
 </body>
