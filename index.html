@@ -118,19 +118,24 @@
       await animateReels(result);
 
       const payout = evaluate(result);
+      let message = "No win. Try again!";
+      let messageType = "info";
+
       if (payout > 0) {
         const win = payout * BET;
         credits += win;
         updateCredits();
-        msg(`You won $${win} (${payout}×)!`, "win");
-      } else {
-        msg("No win. Try again!");
+        message = `You won $${win} (${payout}×)!`;
+        messageType = "win";
       }
-      if (credits < BET) {
-        msg("You’re out of credits. Hit +$20 to keep playing.");
-      } else {
-        spinBtn.disabled = false;
+
+      const broke = credits < BET;
+      spinBtn.disabled = broke;
+      if (broke) {
+        message += " You’re out of credits. Hit +$20 to keep playing.";
       }
+
+      msg(message, messageType);
     });
 
     function updateCredits() {
