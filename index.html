@@ -3,183 +3,343 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Mini Slot Machine</title>
+  <title>Snail Trail Simulator</title>
   <style>
-    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-    body { display:flex; min-height:100svh; margin:0; background:#111; color:#eee; align-items:center; justify-content:center; }
-    .wrap { width:min(520px, 92vw); background:#1b1b1b; border:1px solid #2a2a2a; border-radius:14px; padding:20px; box-shadow:0 10px 40px rgba(0,0,0,.35); }
-    h1 { margin:0 0 10px; font-size:1.15rem; color:#b6f; letter-spacing:.3px; }
-    .reels { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin:14px 0 12px; }
-    .cell { background:#0d0d0d; border:1px solid #333; border-radius:10px; height:110px; display:grid; place-items:center; font-size:54px; transition:transform .2s ease; }
-    .cell.spin { animation:spin .8s ease-in-out; }
-    @keyframes spin {
-      0% { transform:translateY(0) rotate(0); }
-      35% { transform:translateY(-12px) rotate(6deg); }
-      70% { transform:translateY(4px) rotate(-4deg); }
-      100% { transform:translateY(0) rotate(0); }
+    :root {
+      --bg: #dff4d6;
+      --panel: #ffffffdd;
+      --ink: #28421f;
+      --accent: #5f8f3b;
+      --trail: #96d6ff;
+      font-family: "Trebuchet MS", system-ui, -apple-system, sans-serif;
     }
-    .panel { display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
-    .panel .left { display:flex; gap:10px; align-items:center; }
-    .btn { appearance:none; border:0; background:#7c4dff; color:#fff; padding:10px 16px; border-radius:10px; font-weight:700; cursor:pointer; }
-    .btn:disabled { opacity:.5; cursor:not-allowed; }
-    .muted { color:#aaa; font-size:.9rem; }
-    .msg { min-height:1.2em; margin-top:8px; color:#9efc; }
-    .stats { display:flex; gap:16px; flex-wrap:wrap; font-size:.95rem; }
-    .stat { background:#121212; border:1px solid #2a2a2a; padding:8px 10px; border-radius:8px; }
-    details { margin-top:12px; }
-    table { width:100%; border-collapse:collapse; font-size:.95rem; }
-    td, th { border-bottom:1px solid #2a2a2a; padding:8px; text-align:left; }
-    .green { color:#6eea8d; }
-    .pink { color:#ff8ad6; }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100svh;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at 20% 20%, #f8fff0, var(--bg));
+      color: var(--ink);
+      padding: 20px;
+    }
+
+    .wrap {
+      width: min(900px, 96vw);
+      background: var(--panel);
+      border: 2px solid #a9c995;
+      border-radius: 18px;
+      box-shadow: 0 14px 34px rgba(55, 86, 35, 0.2);
+      overflow: hidden;
+    }
+
+    header {
+      padding: 14px 16px;
+      background: linear-gradient(180deg, #edf8e7, #d8edcd);
+      border-bottom: 1px solid #b7d1a8;
+    }
+
+    h1 { margin: 0; font-size: 1.2rem; }
+    .subtitle { margin: 6px 0 0; color: #496638; font-size: 0.95rem; }
+
+    .content {
+      display: grid;
+      grid-template-columns: 1fr 240px;
+      gap: 0;
+    }
+
+    #world {
+      width: 100%;
+      height: 520px;
+      border: 0;
+      border-right: 1px solid #b7d1a8;
+      background:
+        radial-gradient(circle at 12% 14%, #ffc1de 0 12px, transparent 13px),
+        radial-gradient(circle at 82% 18%, #ffe8a0 0 11px, transparent 12px),
+        radial-gradient(circle at 70% 74%, #d4a6ff 0 11px, transparent 12px),
+        radial-gradient(circle at 28% 80%, #ffb4b4 0 10px, transparent 11px),
+        radial-gradient(circle at 90% 60%, #b8ebff 0 10px, transparent 11px),
+        radial-gradient(circle at 40% 50%, #f6ffd2 0 120px, #c8e9ac 121px, #b5df93 100%);
+      display: block;
+    }
+
+    aside {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card {
+      border: 1px solid #bad5ab;
+      background: #f5fff0;
+      border-radius: 12px;
+      padding: 10px;
+    }
+
+    .card h2 {
+      margin: 0 0 6px;
+      font-size: 0.95rem;
+      color: #3f5e2d;
+    }
+
+    .stat {
+      margin: 4px 0;
+      font-size: 0.95rem;
+    }
+
+    .btn {
+      appearance: none;
+      border: 0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-weight: 700;
+      color: white;
+      background: var(--accent);
+      cursor: pointer;
+    }
+
+    .btn:hover { filter: brightness(1.07); }
+
+    .small { font-size: 0.88rem; color: #567644; margin: 0; }
+
+    .keys {
+      display: grid;
+      gap: 4px;
+      font-size: 0.88rem;
+      color: #445f35;
+    }
+
+    @media (max-width: 840px) {
+      .content { grid-template-columns: 1fr; }
+      #world { border-right: 0; border-bottom: 1px solid #b7d1a8; height: 430px; }
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>🍒 Mini Slot Machine</h1>
+  <main class="wrap">
+    <header>
+      <h1>🐌 Snail Seal Simulation</h1>
+      <p class="subtitle">Wiggle around the garden, snack on flowers, and leave a shiny trail.</p>
+    </header>
 
-    <div class="reels" id="reels">
-      <div class="cell" id="r0">🍒</div>
-      <div class="cell" id="r1">🍋</div>
-      <div class="cell" id="r2">🔔</div>
-    </div>
+    <section class="content">
+      <canvas id="world" width="660" height="520" aria-label="Garden world"></canvas>
 
-    <div class="panel">
-      <div class="left">
-        <button class="btn" id="spinBtn">SPIN (−$1)</button>
-        <button class="btn" id="addBtn" title="Add $20 credits">+ $20</button>
-      </div>
-      <div class="stats">
-        <div class="stat">Credits: <strong id="credits">$100</strong></div>
-        <div class="stat">Bet: <strong id="bet">$1</strong></div>
-      </div>
-    </div>
+      <aside>
+        <div class="card">
+          <h2>Snail Vibes</h2>
+          <p class="stat">Mood: <strong id="mood">Curious</strong></p>
+          <p class="stat">Flowers munched: <strong id="flowersEaten">0</strong></p>
+          <p class="stat">Slime trail points: <strong id="trailCount">0</strong></p>
+          <p class="stat">Energy: <strong id="energy">100</strong>%</p>
+        </div>
 
-    <div class="msg" id="msg"></div>
+        <div class="card">
+          <h2>How to Snail</h2>
+          <div class="keys">
+            <span>⬅️➡️ or A/D: Turn</span>
+            <span>⬆️ or W: Scoot</span>
+            <span>Hold Shift: Turbo slime</span>
+          </div>
+        </div>
 
-    <details>
-      <summary class="muted">Payout table</summary>
-      <table>
-        <thead><tr><th>Combo</th><th>Payout</th></tr></thead>
-        <tbody>
-          <tr><td>3× 💎</td><td class="green">×20</td></tr>
-          <tr><td>3× 🔔</td><td class="green">×10</td></tr>
-          <tr><td>3× 🍀</td><td class="green">×6</td></tr>
-          <tr><td>3× 🍒 / 🍋 / 🍇</td><td class="green">×4</td></tr>
-          <tr><td>Any 2 of a kind</td><td class="green">×2</td></tr>
-        </tbody>
-      </table>
-    </details>
-
-    <p class="muted">Tip: edit symbols/payouts in the code to theme it (Zelda, Diablo, plants, spiders—go wild).</p>
-  </div>
+        <button id="resetBtn" class="btn">New Garden</button>
+        <p id="message" class="small">You're just a tiny snail in a giant flower world.</p>
+      </aside>
+    </section>
+  </main>
 
   <script>
-    // Symbols and rarity (weights)
-    const SYMBOLS = [
-      { ch: "🍒", w: 5 },
-      { ch: "🍋", w: 5 },
-      { ch: "🍇", w: 5 },
-      { ch: "🍀", w: 3 },
-      { ch: "🔔", w: 2 },
-      { ch: "💎", w: 1 },
-    ];
+    const canvas = document.getElementById("world");
+    const ctx = canvas.getContext("2d");
 
-    // Payouts for triples; pairs pay 2x by default.
-    const PAY_TRIPLE = { "💎": 20, "🔔": 10, "🍀": 6, "🍒": 4, "🍋": 4, "🍇": 4 };
-    const START_CREDITS = 100;
-    const BET = 1;
+    const moodEl = document.getElementById("mood");
+    const flowersEatenEl = document.getElementById("flowersEaten");
+    const trailCountEl = document.getElementById("trailCount");
+    const energyEl = document.getElementById("energy");
+    const messageEl = document.getElementById("message");
+    const resetBtn = document.getElementById("resetBtn");
 
-    const creditsEl = document.getElementById("credits");
-    const betEl = document.getElementById("bet");
-    const msgEl = document.getElementById("msg");
-    const spinBtn = document.getElementById("spinBtn");
-    const addBtn = document.getElementById("addBtn");
-    const reelEls = [0, 1, 2].map((i) => document.getElementById(`r${i}`));
+    const MOODS = ["Curious", "Sleepy", "Hungry", "Zen", "Wiggly"];
+    const FLOWER_COLORS = ["#ff84bc", "#ffd266", "#9ed7ff", "#cf9cff", "#ff9f80"];
 
-    let credits = START_CREDITS;
-    betEl.textContent = `$${BET}`;
-    updateCredits();
+    let keys = new Set();
+    let snail;
+    let flowers;
+    let trail;
+    let eaten;
 
-    addBtn.addEventListener("click", () => {
-      credits += 20;
-      updateCredits();
-      msg("Added $20.");
-      spinBtn.disabled = false;
-    });
+    function random(min, max) {
+      return Math.random() * (max - min) + min;
+    }
 
-    spinBtn.addEventListener("click", async () => {
-      if (credits < BET) return;
-      credits -= BET;
-      updateCredits();
-      spinBtn.disabled = true;
-      msg("Spinning…");
+    function choose(list) {
+      return list[Math.floor(Math.random() * list.length)];
+    }
 
-      const result = spinOnce();
-      await animateReels(result);
+    function resetWorld() {
+      snail = {
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        angle: -Math.PI / 2,
+        energy: 100,
+        mood: choose(MOODS),
+      };
 
-      const payout = evaluate(result);
-      let message = "No win. Try again!";
-      let messageType = "info";
+      flowers = Array.from({ length: 14 }, () => ({
+        x: random(30, canvas.width - 30),
+        y: random(30, canvas.height - 30),
+        r: random(8, 13),
+        color: choose(FLOWER_COLORS),
+      }));
 
-      if (payout > 0) {
-        const win = payout * BET;
-        credits += win;
-        updateCredits();
-        message = `You won $${win} (${payout}×)!`;
-        messageType = "win";
+      trail = [];
+      eaten = 0;
+      updateHud();
+      say("Fresh garden loaded. Snail it up.");
+    }
+
+    function updateHud() {
+      moodEl.textContent = snail.mood;
+      flowersEatenEl.textContent = eaten;
+      trailCountEl.textContent = trail.length;
+      energyEl.textContent = Math.max(0, Math.round(snail.energy));
+    }
+
+    function say(text) {
+      messageEl.textContent = text;
+    }
+
+    function update() {
+      const turnSpeed = 0.06;
+      const baseSpeed = keys.has("Shift") ? 2.6 : 1.5;
+
+      if (keys.has("ArrowLeft") || keys.has("a")) snail.angle -= turnSpeed;
+      if (keys.has("ArrowRight") || keys.has("d")) snail.angle += turnSpeed;
+
+      const moving = keys.has("ArrowUp") || keys.has("w");
+      if (moving && snail.energy > 0) {
+        snail.x += Math.cos(snail.angle) * baseSpeed;
+        snail.y += Math.sin(snail.angle) * baseSpeed;
+        snail.energy -= keys.has("Shift") ? 0.28 : 0.12;
+
+        trail.push({ x: snail.x, y: snail.y, age: 0 });
+        if (trail.length > 220) trail.shift();
+      } else {
+        snail.energy += 0.08;
       }
 
-      const broke = credits < BET;
-      spinBtn.disabled = broke;
-      if (broke) {
-        message += " You’re out of credits. Hit +$20 to keep playing.";
+      snail.energy = Math.min(100, snail.energy);
+      snail.x = Math.max(16, Math.min(canvas.width - 16, snail.x));
+      snail.y = Math.max(16, Math.min(canvas.height - 16, snail.y));
+
+      for (const point of trail) point.age += 1;
+
+      flowers = flowers.filter((flower) => {
+        const dx = flower.x - snail.x;
+        const dy = flower.y - snail.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < flower.r + 10) {
+          eaten += 1;
+          snail.energy = Math.min(100, snail.energy + 12);
+          snail.mood = choose(MOODS);
+          say(`Nom nom! Flower #${eaten} was delicious.`);
+          return false;
+        }
+        return true;
+      });
+
+      if (!flowers.length) {
+        say("You munched every flower. Press New Garden for another snail day.");
       }
 
-      msg(message, messageType);
-    });
-
-    function updateCredits() {
-      creditsEl.textContent = `$${credits}`;
+      updateHud();
     }
 
-    function weightedPick() {
-      const total = SYMBOLS.reduce((sum, symbol) => sum + symbol.w, 0);
-      let r = Math.random() * total;
-      for (const symbol of SYMBOLS) {
-        r -= symbol.w;
-        if (r <= 0) return symbol.ch;
+    function drawFlower(f) {
+      const petals = 6;
+      for (let i = 0; i < petals; i++) {
+        const a = (Math.PI * 2 * i) / petals;
+        const px = f.x + Math.cos(a) * (f.r * 0.9);
+        const py = f.y + Math.sin(a) * (f.r * 0.9);
+        ctx.beginPath();
+        ctx.fillStyle = f.color;
+        ctx.arc(px, py, f.r * 0.55, 0, Math.PI * 2);
+        ctx.fill();
       }
-      return SYMBOLS[0].ch;
+      ctx.beginPath();
+      ctx.fillStyle = "#ffe95b";
+      ctx.arc(f.x, f.y, f.r * 0.45, 0, Math.PI * 2);
+      ctx.fill();
     }
 
-    function spinOnce() {
-      return [weightedPick(), weightedPick(), weightedPick()];
+    function drawSnail() {
+      ctx.save();
+      ctx.translate(snail.x, snail.y);
+      ctx.rotate(snail.angle);
+
+      ctx.beginPath();
+      ctx.fillStyle = "#84674d";
+      ctx.arc(-4, 0, 10, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.fillStyle = "#c9b299";
+      ctx.ellipse(8, 0, 14, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = "#5b4432";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(-4, 0, 5.2, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(15, -3);
+      ctx.lineTo(21, -11);
+      ctx.moveTo(15, 3);
+      ctx.lineTo(21, 11);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.fillStyle = "#2d2d2d";
+      ctx.arc(21, -11, 1.8, 0, Math.PI * 2);
+      ctx.arc(21, 11, 1.8, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
     }
 
-    function evaluate([a, b, c]) {
-      if (a === b && b === c) return PAY_TRIPLE[a] ?? 4; // default 4×
-      if (a === b || a === c || b === c) return 2; // any pair
-      return 0;
-    }
+    function render() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    async function animateReels(result) {
-      // quick bounce
-      reelEls.forEach((el) => el.classList.add("spin"));
-      await sleep(250);
-      // staggered stop
-      for (let i = 0; i < 3; i++) {
-        reelEls[i].textContent = result[i];
-        await sleep(250);
+      for (const p of trail) {
+        const alpha = Math.max(0.08, 0.35 - p.age / 300);
+        ctx.fillStyle = `rgba(120, 195, 255, ${alpha})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+        ctx.fill();
       }
-      reelEls.forEach((el) => el.classList.remove("spin"));
+
+      flowers.forEach(drawFlower);
+      drawSnail();
     }
 
-    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-    function msg(text, kind = "info") {
-      msgEl.textContent = text;
-      msgEl.className = kind === "win" ? "msg green" : "msg";
+    function loop() {
+      update();
+      render();
+      requestAnimationFrame(loop);
     }
+
+    window.addEventListener("keydown", (event) => keys.add(event.key));
+    window.addEventListener("keyup", (event) => keys.delete(event.key));
+    resetBtn.addEventListener("click", resetWorld);
+
+    resetWorld();
+    loop();
   </script>
 </body>
 </html>
